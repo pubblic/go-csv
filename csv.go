@@ -176,9 +176,9 @@ func flood(w io.WriteCloser, p []byte) error {
 
 // unsafe
 func unsafeBytes(s string) []byte {
-	h := *(*reflect.SliceHeader)(unsafe.Pointer(&s))
-	h.Cap = h.Len
-	return *(*[]byte)(unsafe.Pointer(&h))
+	repr := *(*reflect.SliceHeader)(unsafe.Pointer(&s))
+	repr.Cap = h.Len
+	return *(*[]byte)(unsafe.Pointer(&repr))
 }
 
 func (w *Writer) getBuf() *bytes.Buffer {
@@ -240,8 +240,6 @@ func (w *Writer) stringify(v reflect.Value) string {
 	}
 }
 
-// row []string
-// row []interface{}
 func (w *Writer) Write(record interface{}) error {
 	typ := reflect.TypeOf(record)
 	if typ.Kind() != reflect.Slice {
