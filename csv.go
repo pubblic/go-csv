@@ -24,6 +24,10 @@ type Opener struct {
 	// ColumnNames는 엑셀 파일 생성 시 파일의 첫 행에 쓰여집니다.
 	ColumnNames interface{}
 
+	Comma rune
+
+	UseCRLF bool
+
 	// Charset은 데이터 저장에 사용할 인코딩 이름을 설정합니다. 인코딩을
 	// 설정하지 않는다면 기본값인 utf-8을 사용합니다.
 	// http://www.w3.org/TR/encoding 목록에 등록된 인코딩이 지원됩니다.
@@ -83,7 +87,12 @@ func (o Opener) Open() (*Writer, *os.File, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	w := NewWriter(raw)
+	cw := csv.NewWriter(raw)
+	if o.Comma {
+		cw.Comma = o.Comma
+	}
+	cw.UseCRLF = o.UseCRLF
+	w := NewWriter(cw)
 	w.Encoding = o.Encoding
 
 	if o.ColumnNames != nil && isEmptyFile(raw) {
@@ -110,18 +119,16 @@ type Writer struct {
 	// 함수를 호출한 이후엔 읽기 전용이 됩니다.
 	Encoding encoding.Encoding
 
-	raw io.Writer
-	w   *csv.Writer
+	w *csv.Writer
 
 	enc        *encoding.Encoder
 	bufferPool sync.Pool
 	recordPool sync.Pool
 }
 
-func NewWriter(raw io.Writer) *Writer {
+func NewWriter(w *csv.Writer) *Writer {
 	return &Writer{
-		raw: raw,
-		w:   csv.NewWriter(raw),
+		w: w,
 	}
 }
 
