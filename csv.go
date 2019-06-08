@@ -98,7 +98,7 @@ func (o Opener) Open() (*Writer, *os.File, error) {
 	if o.ColumnNames != nil && isEmptyFile(raw) {
 		w.Write(o.ColumnNames)
 	}
-	return w, nil, nil
+	return w, raw, nil
 }
 
 func isEmptyFile(raw *os.File) bool {
