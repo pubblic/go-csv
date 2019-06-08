@@ -21,14 +21,26 @@ func check(t *testing.T, err error) {
 }
 
 func TestWriter(t *testing.T) {
-	const expected = "abcdef,ghijkl,mnopqr,stuvwx,yz\n"
-	actual := writes(t, []string{
+	actual := writes(t, []interface{}{
 		"abcdef",
 		"ghijkl",
 		"mnopqr",
 		"stuvwx",
 		"yz",
 	}).String()
+	expected := "abcdef,ghijkl,mnopqr,stuvwx,yz\n"
+	if expected != actual {
+		t.Fatalf("expected %s, got %s", expected, actual)
+	}
+
+	actual = writes(t, []interface{}{
+		123,
+		456,
+		7,
+		"ab",
+		"def",
+	}).String()
+	expected = "123,456,7,ab,def\n"
 	if expected != actual {
 		t.Fatalf("expected %s, got %s", expected, actual)
 	}

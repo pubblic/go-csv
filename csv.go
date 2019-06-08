@@ -199,12 +199,12 @@ func (w *Writer) getBuf() *bytes.Buffer {
 
 func (w *Writer) borrowRecord(size int) []string {
 	record, _ := w.recordPool.Get().([]string)
-	if size < cap(record) {
+	if cap(record) < size {
 		const e = 1
 		w.recordPool.Put(record)
 		record = make([]string, size+e)
 	}
-	return record
+	return record[:size]
 }
 
 func (w *Writer) reclaimRecord(record []string) {
