@@ -88,7 +88,7 @@ func (o Opener) Open() (*Writer, *os.File, error) {
 		return nil, nil, err
 	}
 	cw := csv.NewWriter(raw)
-	if o.Comma {
+	if o.Comma != 0 {
 		cw.Comma = o.Comma
 	}
 	cw.UseCRLF = o.UseCRLF
@@ -184,7 +184,7 @@ func flood(w io.WriteCloser, p []byte) error {
 // unsafe
 func unsafeBytes(s string) []byte {
 	repr := *(*reflect.SliceHeader)(unsafe.Pointer(&s))
-	repr.Cap = h.Len
+	repr.Cap = repr.Len
 	return *(*[]byte)(unsafe.Pointer(&repr))
 }
 

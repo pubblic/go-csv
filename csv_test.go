@@ -2,12 +2,13 @@ package csv
 
 import (
 	"bytes"
+	"encoding/csv"
 	"testing"
 )
 
 func writes(t *testing.T, records ...interface{}) *bytes.Buffer {
 	buf := new(bytes.Buffer)
-	w := NewWriter(buf)
+	w := NewWriter(csv.NewWriter(buf))
 	check(t, w.WriteAll(records))
 	check(t, w.Flush())
 	return buf
