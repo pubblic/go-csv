@@ -152,9 +152,13 @@ func stringifyField(v reflect.Value) string {
 		return v.String()
 	case reflect.Invalid:
 		return ""
-	default:
-		return fmt.Sprint(v)
+	case reflect.Ptr, reflect.Interface:
+		if v.IsNil() {
+			return ""
+		}
+		return stringifyField(v.Elem())
 	}
+	return fmt.Sprint(v)
 }
 
 func (w *Writer) Write(record interface{}) error {
