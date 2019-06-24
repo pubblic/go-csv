@@ -2,11 +2,13 @@ package csv
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"sync"
 	"unsafe"
 
@@ -207,13 +209,128 @@ func (w *Writer) Flush() error {
 	return w.Writer.Error()
 }
 
-// TODO
 type Reader struct {
 	Reader *csv.Reader
+	record []string
+	err    error
 }
 
 func NewReader(r *csv.Reader) *Reader {
 	return &Reader{
 		Reader: r,
 	}
+}
+
+func (r *Reader) Skip() error {
+	_, err := r.Reader.Read()
+	if err, ok := err.(*csv.ParseError); ok {
+		if err.Err == csv.ErrFieldCount {
+			return nil
+		}
+	}
+	return err
+}
+
+func (r *Reader) Err() error {
+	if r.err == io.EOF {
+		return nil
+	}
+	return r.err
+}
+
+func (r *Reader) Next() bool {
+	r.record, r.err = r.Reader.Read()
+	return r.err == nil
+}
+
+func (r *Reader) Record() []string {
+	return r.record
+}
+
+func (r *Reader) Scan(dest ...interface{}) error {
+	for i, dst := range dest {
+		var val string
+		if i < len(r.record) {
+			val = r.record[i]
+		}
+		err := convertAssign(dst, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+var errNilPtr = errors.New("destination pointer is nil")
+
+func convertAssign(dst interface{}, val string) error {
+	switch dst := dst.(type) {
+	case *string:
+		if dst == nil {
+			return errNilPtr
+		}
+		*dst = val
+		return nil
+	case *[]byte:
+		if dst == nil {
+			return errNilPtr
+		}
+		*dst = []byte(val)
+		return nil
+	}
+	pv := reflect.ValueOf(dst)
+	if pv.Kind() != reflect.Ptr {
+		return errors.New("destination is not a pointer")
+	}
+	if pv.IsNil() {
+		return errNilPtr
+	}
+	return convertAssignReflect(pv.Type(), pv.Elem(), val)
+}
+
+func convertAssignReflect(dstType reflect.Type, v reflect.Value, val string) error {
+	// assert: v.CanSet()
+
+	switch v.Kind() {
+	case reflect.Ptr:
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		return convertAssignReflect(dstType, v.Elem(), val)
+	case reflect.Interface:
+		if v.Elem().CanSet() {
+			return convertAssignReflect(dstType, v.Elem(), val)
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		i64, err := strconv.ParseInt(val, 10, v.Type().Bits())
+		if err != nil {
+			return err
+		}
+		v.SetInt(i64)
+		return nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		u64, err := strconv.ParseUint(val, 10, v.Type().Bits())
+		if err != nil {
+			return err
+		}
+		v.SetUint(u64)
+		return nil
+	case reflect.Float32, reflect.Float64:
+		f64, err := strconv.ParseFloat(val, v.Type().Bits())
+		if err != nil {
+			return err
+		}
+		v.SetFloat(f64)
+		return nil
+	case reflect.String:
+		v.SetString(val)
+		return nil
+	case reflect.Slice:
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			v.Set(reflect.ValueOf([]byte(val)))
+		}
+	}
+
+	return fmt.Errorf("unsupported Scan, storing into type %s",
+		dstType.String())
 }
