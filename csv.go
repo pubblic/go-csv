@@ -68,6 +68,9 @@ func (o Opener) Writer() (*Writer, *os.File, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	if o.OpenFlag&os.O_RDONLY == 0 && o.OpenFlag&os.O_RDWR == 0 {
+		o.OpenFlag |= os.O_RDONLY
+	}
 	raw, err := o.openFile()
 	if err != nil {
 		return nil, nil, err
@@ -79,11 +82,13 @@ func (o Opener) Writer() (*Writer, *os.File, error) {
 	return NewWriter(csv.NewWriter(w)), raw, nil
 }
 
-// TODO
 func (o Opener) Reader() (*Reader, *os.File, error) {
 	enc, err := o.getEncoding()
 	if err != nil {
 		return nil, nil, err
+	}
+	if o.OpenFlag&os.O_WRONLY == 0 && o.OpenFlag&os.O_RDWR == 0 {
+		o.OpenFlag |= os.O_WRONLY
 	}
 	raw, err := o.openFile()
 	if err != nil {
