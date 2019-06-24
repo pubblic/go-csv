@@ -162,6 +162,10 @@ func stringifyField(v reflect.Value) string {
 }
 
 func (w *Writer) Write(record interface{}) error {
+	if record == nil {
+		return w.Writer.Write(nil)
+	}
+
 	typ := reflect.TypeOf(record)
 	if typ.Kind() != reflect.Slice {
 		panic("record is not a slice")
