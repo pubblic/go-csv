@@ -14,6 +14,8 @@ import (
 	"golang.org/x/text/encoding/htmlindex"
 )
 
+var openFileHook = os.OpenFile
+
 func getEncoding(charset string) (encoding.Encoding, error) {
 	return htmlindex.Get(charset)
 }
@@ -56,7 +58,7 @@ func (o *Opener) getEncoding() (encoding.Encoding, error) {
 }
 
 func (o *Opener) openFile() (*os.File, error) {
-	return os.OpenFile(o.Name, o.OpenFlag, o.OpenMode)
+	return openFileHook(o.Name, o.OpenFlag, o.OpenMode)
 }
 
 // Open은 명시된 설정과 함께 엑셀 파일을 엽니다. 반환되는 *os.File 객체는
