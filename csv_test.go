@@ -3,6 +3,8 @@ package csv
 import (
 	"bytes"
 	"encoding/csv"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -73,11 +75,37 @@ func bufWrite(args []interface{}) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-func check(t *testing.T, err error) {
+func TestReader(t *testing.T) {
+	const data = "abc,32,17,,bytes\n"
+	r := NewReader(csv.NewReader(strings.NewReader(data)))
+	r.Reader.ReuseRecord = true
+
+	for r.Next() {
+		var (
+			a string
+			b int
+			c uint32
+			d string
+			e []byte
+		)
+		err := r.Scan(&a, &b, &c, &d, &e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "abc", a)
+		equal(t, 32, b)
+		equal(t, uint32(17), c)
+		equal(t, "", d)
+		equal(t, []byte("bytes"), e)
+	}
+	err := r.Err()
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
+func equal(t *testing.T, want, got interface{}) {
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("wants %v, got %v", want, got)
 	}
 }
