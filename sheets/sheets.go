@@ -10,10 +10,6 @@ type Sheet interface {
 	Set(x, y int, val interface{})
 }
 
-type Pusher interface {
-	Push(val interface{})
-}
-
 type Fixed struct {
 	Pix []interface{}
 
