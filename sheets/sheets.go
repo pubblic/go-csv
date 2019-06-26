@@ -4,12 +4,23 @@ import (
 	"image"
 )
 
+// Sheet 인터페이스는 시트 객체를 표현하는 데 사용합니다. 시트 객체는 Fixed
+// 같이 일정한 크기를 가지거나 또는 Float 같이유동적인 크기를 가질 수 있습니다.
 type Sheet interface {
+	// Bounds는 시트의 크기를 담은 r image.Rectangle 객체를 반환합니다.
 	Bounds() image.Rectangle
+
+	// At은 셀 (x, y)에 입력된 값을 가져옵니다. 시트 크기를 벗어난 셀에
+	// 대하여 nil 값을 반환합니다.
 	At(x, y int) interface{}
+
+	// Set은 셀 (x, y)에 값을 입력합니다. 고정된 시트 크기를 가진 경우 시트
+	// 크기를 넘어선 셀에 값을 입력할 경우 에러 없이 값이 입력되지 않을 수
+	// 있습니다.
 	Set(x, y int, val interface{})
 }
 
+// Fixed는 고정된 크기를 가진 시트를 표현합니다.
 type Fixed struct {
 	Pix []interface{}
 
@@ -45,6 +56,8 @@ func (p *Fixed) Set(x, y int, val interface{}) {
 	p.Pix[i] = val
 }
 
+// Float은 유동적인 크기를 가진 시트를 표현합니다. 시트 크기는 입력된 값에 따라
+// 자동적으로 변경됩니다.
 type Float struct {
 	rows cake
 }

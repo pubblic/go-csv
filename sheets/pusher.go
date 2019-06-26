@@ -2,6 +2,8 @@ package sheets
 
 import "image"
 
+// Pusher 인터페이스는 입력 순서가 정의된 값을 입력하기 쉽게 도와주는데
+// 사용됩니다.
 type Pusher interface {
 	Push(val interface{})
 }
