@@ -116,8 +116,9 @@ func IsEmptyFile(raw interface {
 }
 
 type Writer struct {
-	Writer     *csv.Writer
-	recordPool sync.Pool
+	Writer            *csv.Writer
+	TrimEmptyTrailing bool
+	recordPool        sync.Pool
 }
 
 func NewWriter(w *csv.Writer) *Writer {
@@ -176,7 +177,7 @@ func (w *Writer) Write(record interface{}) error {
 
 	// special case: equivalent to []string
 	if typ.Elem().Kind() == reflect.String {
-		err := w.Writer.Write(unsafeStrings(v))
+		err := w.Writer.Write(w.trim(unsafeStrings(v)))
 		runtime.KeepAlive(record)
 		return err
 	}
@@ -185,9 +186,19 @@ func (w *Writer) Write(record interface{}) error {
 	for i := 0; i < v.Len(); i++ {
 		src[i] = stringifyField(v.Index(i))
 	}
-	err := w.Writer.Write(src)
+	err := w.Writer.Write(w.trim(src))
 	w.recordPool.Put(src)
 	return err
+}
+
+func (w *Writer) trim(src []string) []string {
+	if !w.TrimEmptyTrailing {
+		return src
+	}
+	for len(src) > 0 && src[len(src)-1] == "" {
+		src = src[:len(src)-1]
+	}
+	return src
 }
 
 func (w *Writer) WriteAll(records []interface{}) error {
